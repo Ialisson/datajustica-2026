@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DataJustiça 2026 — Ciência de Dados & Justiça Social</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:      #060a12;
+  --surface: #0c1220;
+  --card:    #111827;
+  --border:  rgba(255,255,255,0.07);
+  --text:    #f1f5f9;
+  --muted:   #64748b;
+  --amber:   #f59e0b;
+  --red:     #ef4444;
+  --teal:    #14b8a6;
+  --blue:    #60a5fa;
+  --green:   #4ade80;
+  --a-dim:   rgba(245,158,11,0.12);
+  --r-dim:   rgba(239,68,68,0.12);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;line-height:1.7;overflow-x:hidden}
+
+/* PROGRESS */
+#prog{position:fixed;top:0;left:0;z-index:400;height:2px;width:0;background:linear-gradient(90deg,var(--amber),var(--red));pointer-events:none;transition:width .1s}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:300;height:56px;background:rgba(6,10,18,0.88);backdrop-filter:blur(18px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 2.5rem}
+.nav-brand{font-family:'JetBrains Mono',monospace;font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--amber)}
+.nav-links{display:flex;gap:1.8rem;align-items:center}
+.nav-links a{color:var(--muted);text-decoration:none;font-size:.78rem;letter-spacing:.04em;transition:color .2s}
+.nav-links a:hover{color:var(--text)}
+.nav-chip{display:flex;align-items:center;gap:.4rem;background:var(--a-dim);border:1px solid rgba(245,158,11,.3);color:var(--amber);border-radius:100px;font-size:.68rem;padding:.28rem .75rem;font-family:'JetBrains Mono',monospace}
+.nav-chip-dot{width:6px;height:6px;border-radius:50%;background:var(--amber);animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+
+/* HERO */
+.hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:120px 2.5rem 80px;position:relative;overflow:hidden}
+.hero-bg{position:absolute;inset:0;z-index:0;background:
+  radial-gradient(ellipse 70% 55% at 65% 38%,rgba(245,158,11,.045) 0%,transparent 65%),
+  radial-gradient(ellipse 55% 40% at 18% 78%,rgba(239,68,68,.04) 0%,transparent 65%)}
+.hero-grid{position:absolute;inset:0;z-index:0;
+  background-image:linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px);
+  background-size:60px 60px;
+  mask-image:radial-gradient(ellipse at 60% 40%,black 20%,transparent 75%)}
+.hero-content{position:relative;z-index:1;max-width:960px}
+.hero-eyebrow{font-family:'JetBrains Mono',monospace;font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;color:var(--amber);margin-bottom:2rem;display:flex;align-items:center;gap:.8rem}
+.hero-eyebrow::before{content:'';display:block;width:32px;height:1px;background:var(--amber)}
+.hero h1{font-family:'Syne',sans-serif;font-size:clamp(3.2rem,7.5vw,7.5rem);font-weight:800;line-height:.92;letter-spacing:-.025em;margin-bottom:2rem}
+.hero h1 .l1{color:var(--text);display:block}
+.hero h1 .l2{display:block;background:linear-gradient(130deg,var(--amber) 0%,var(--red) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-desc{max-width:540px;color:var(--muted);font-size:1.02rem;line-height:1.85;margin-bottom:3.5rem}
+.hero-kpis{display:flex;gap:2.5rem;flex-wrap:wrap;border-top:1px solid var(--border);padding-top:2.5rem}
+.hkpi .n{font-family:'Syne',sans-serif;font-size:2.6rem;font-weight:700;line-height:1;display:block;background:linear-gradient(120deg,var(--amber),#fbbf24);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hkpi .l{font-size:.7rem;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-top:.3rem}
+.scroll-cue{position:absolute;bottom:2.5rem;left:2.5rem;z-index:1;font-family:'JetBrains Mono',monospace;font-size:.65rem;letter-spacing:.15em;color:var(--muted);text-transform:uppercase;display:flex;align-items:center;gap:.6rem}
+.scroll-cue::before{content:'';display:block;width:1px;height:24px;background:var(--muted);animation:scrollpulse 2s infinite}
+@keyframes scrollpulse{0%,100%{transform:scaleY(1);opacity:.5}50%{transform:scaleY(1.5);opacity:1}}
+
+/* CHAPTER HEADER */
+.chapter-wrap{max-width:1380px;margin:0 auto;padding:100px 2.5rem 0}
+.ch-tag{font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;margin-bottom:1rem}
+.ch-tag.a{color:var(--amber)}.ch-tag.r{color:var(--red)}
+.ch-h2{font-family:'Syne',sans-serif;font-size:clamp(2rem,4.2vw,3.8rem);font-weight:700;line-height:1.08;letter-spacing:-.02em;max-width:800px}
+.ch-h2 .ca{color:var(--amber)}.ch-h2 .cr{color:var(--red)}
+
+/* SCROLLYTELLING */
+.scrolly{display:grid;grid-template-columns:1fr 1fr;max-width:1380px;margin:0 auto;padding:0 2.5rem;align-items:start}
+.s-steps{padding:80px 3rem 100px 0}
+.step{min-height:88vh;display:flex;flex-direction:column;justify-content:center;padding:2rem 0;opacity:.28;transition:opacity .55s ease}
+.step.on{opacity:1}
+.s-num{font-family:'JetBrains Mono',monospace;font-size:.63rem;letter-spacing:.18em;text-transform:uppercase;margin-bottom:1rem}
+.s-num.a{color:var(--amber)}.s-num.r{color:var(--red)}
+.step h3{font-family:'Syne',sans-serif;font-size:1.65rem;font-weight:700;line-height:1.18;margin-bottom:.9rem;letter-spacing:-.015em}
+.step p{color:var(--muted);font-size:.94rem;line-height:1.82;max-width:410px}
+.step p strong{color:var(--text);font-weight:500}
+.stat-pill{display:inline-flex;align-items:baseline;gap:.5rem;margin-top:1.4rem;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:.9rem 1.2rem}
+.pill-big{font-family:'Syne',sans-serif;font-size:2.1rem;font-weight:700}
+.pill-big.a{color:var(--amber)}.pill-big.r{color:var(--red)}
+.pill-lbl{font-size:.8rem;color:var(--muted)}
+
+/* STICKY CHART */
+.s-sticky{position:sticky;top:68px;height:calc(100vh - 88px);display:flex;align-items:center;padding:1rem 0 1rem 1rem}
+.chart-stage{width:100%;height:430px;position:relative;background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.stage-bar{position:absolute;top:0;left:0;right:0;height:2px;z-index:2}
+.stage-bar.a{background:linear-gradient(90deg,var(--amber),transparent)}
+.stage-bar.r{background:linear-gradient(90deg,var(--red),transparent)}
+.chart-layer{position:absolute;inset:0;opacity:0;transition:opacity .55s ease;padding:1.8rem 1.4rem 1.2rem;display:flex;flex-direction:column}
+.chart-layer.on{opacity:1}
+.cl-label{font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:.8rem;flex-shrink:0}
+.cl-canvas{flex:1;min-height:0;position:relative}
+.cl-canvas canvas{width:100%!important;height:100%!important}
+
+/* MAP */
+.map-wrap{max-width:1380px;margin:0 auto;padding:100px 2.5rem 80px}
+.map-controls{display:flex;gap:.6rem;margin:1.5rem 0 2rem;flex-wrap:wrap}
+.mctrl{padding:.48rem 1.1rem;border-radius:100px;font-size:.78rem;font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--card);color:var(--muted);transition:all .2s;font-family:'DM Sans',sans-serif}
+.mctrl:hover{color:var(--text);border-color:rgba(255,255,255,.2)}
+.mctrl.on-r{background:var(--r-dim);border-color:rgba(239,68,68,.4);color:var(--red)}
+.mctrl.on-a{background:var(--a-dim);border-color:rgba(245,158,11,.4);color:var(--amber)}
+.map-grid{display:grid;grid-template-columns:1fr 360px;gap:2rem;align-items:start}
+@media(max-width:900px){.map-grid{grid-template-columns:1fr}}
+#map-box{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;aspect-ratio:4/3;position:relative}
+#map-box svg{width:100%;height:100%}
+.map-panel{display:flex;flex-direction:column;gap:1.2rem}
+.map-legend-title{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.leg-bar{height:8px;border-radius:4px;margin:.5rem 0;background:linear-gradient(90deg,rgba(239,68,68,.15),var(--red))}
+.leg-bar.a{background:linear-gradient(90deg,rgba(245,158,11,.15),var(--amber))}
+.leg-ends{display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--muted)}
+.state-ranks{display:flex;flex-direction:column;gap:.4rem;max-height:300px;overflow-y:auto;padding-right:.3rem}
+.state-ranks::-webkit-scrollbar{width:3px}
+.state-ranks::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.srank{display:flex;align-items:center;gap:.9rem;padding:.6rem .9rem;background:var(--surface);border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:border-color .2s}
+.srank:hover{border-color:rgba(255,255,255,.18)}
+.srank .uf{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--muted);width:26px}
+.srank .sn{font-size:.82rem;flex:1}
+.srank .sv{font-family:'JetBrains Mono',monospace;font-size:.82rem;font-weight:500}
+
+/* TOOLTIP */
+#tt{position:fixed;z-index:600;background:#1a2535;border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:.9rem 1.1rem;pointer-events:none;opacity:0;transition:opacity .15s;font-size:.82rem;min-width:185px;box-shadow:0 24px 48px rgba(0,0,0,.6)}
+#tt .ttn{font-family:'Syne',sans-serif;font-weight:700;font-size:1rem;margin-bottom:.6rem}
+#tt .ttr{display:flex;justify-content:space-between;gap:1rem;color:var(--muted);font-size:.76rem;margin-bottom:.2rem}
+#tt .ttv{color:var(--text);font-family:'JetBrains Mono',monospace}
+
+/* CHAT */
+.chat-wrap{max-width:1380px;margin:0 auto;padding:80px 2.5rem 100px}
+.chat-grid{display:grid;grid-template-columns:1fr 1fr;gap:3.5rem;align-items:start}
+@media(max-width:1100px){.chat-grid{grid-template-columns:1fr}}
+.chat-intro .ci-tag{font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;color:var(--amber);margin-bottom:1.2rem}
+.chat-intro h2{font-family:'Syne',sans-serif;font-size:2.2rem;font-weight:700;line-height:1.12;letter-spacing:-.02em;margin-bottom:1rem}
+.chat-intro p{color:var(--muted);line-height:1.85;margin-bottom:2rem;font-size:.94rem}
+.suggs{display:flex;flex-direction:column;gap:.5rem}
+.sugg{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:.75rem 1rem;cursor:pointer;font-size:.86rem;color:var(--muted);transition:all .2s;text-align:left;display:flex;align-items:flex-start;gap:.7rem;font-family:'DM Sans',sans-serif}
+.sugg-arrow{color:var(--amber);flex-shrink:0;margin-top:.05rem;font-size:.82rem}
+.sugg:hover{background:var(--surface);color:var(--text);border-color:rgba(255,255,255,.16)}
+.chatbox{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;display:flex;flex-direction:column;height:530px}
+.chat-hdr{background:var(--surface);border-bottom:1px solid var(--border);padding:1rem 1.5rem;display:flex;align-items:center;gap:.9rem}
+.chat-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--amber),var(--red));display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;color:var(--bg);flex-shrink:0}
+.chat-hdr-nm{font-size:.88rem;font-weight:500}
+.chat-hdr-st{font-size:.7rem;color:var(--green)}
+.chat-msgs{flex:1;overflow-y:auto;padding:1.4rem;display:flex;flex-direction:column;gap:.9rem;scroll-behavior:smooth}
+.chat-msgs::-webkit-scrollbar{width:3px}
+.chat-msgs::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.cm{display:flex;gap:.7rem;max-width:90%}
+.cm.usr{flex-direction:row-reverse;align-self:flex-end}
+.cm-bub{padding:.75rem 1rem;border-radius:12px;font-size:.86rem;line-height:1.62}
+.cm.ai .cm-bub{background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:4px 12px 12px 12px}
+.cm.usr .cm-bub{background:linear-gradient(135deg,rgba(245,158,11,.22),rgba(239,68,68,.16));border:1px solid rgba(245,158,11,.22);color:var(--text);border-radius:12px 4px 12px 12px}
+.cm-ic{width:28px;height:28px;border-radius:50%;flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center;font-size:.68rem;font-weight:700}
+.cm.ai .cm-ic{background:linear-gradient(135deg,var(--amber),var(--red));color:var(--bg)}
+.cm.usr .cm-ic{background:var(--surface);border:1px solid var(--border);color:var(--muted)}
+.typing-dots{display:flex;gap:4px;padding:.3rem .2rem;align-items:center}
+.typing-dots span{width:6px;height:6px;border-radius:50%;background:var(--muted);animation:td 1.2s infinite}
+.typing-dots span:nth-child(2){animation-delay:.2s}
+.typing-dots span:nth-child(3){animation-delay:.4s}
+@keyframes td{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+.chat-input-row{border-top:1px solid var(--border);padding:.9rem 1.2rem;display:flex;gap:.7rem}
+.chat-in{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.65rem 1rem;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.86rem;outline:none;transition:border-color .2s}
+.chat-in:focus{border-color:rgba(245,158,11,.4)}
+.chat-in::placeholder{color:var(--muted)}
+.send-btn{width:40px;height:40px;border-radius:8px;background:var(--amber);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.9rem;transition:background .2s;flex-shrink:0;color:var(--bg);font-weight:700}
+.send-btn:hover{background:#fbbf24}
+.send-btn:disabled{background:var(--surface);color:var(--muted);cursor:not-allowed}
+
+/* METHODOLOGY */
+.meth-wrap{padding:80px 2.5rem;background:var(--surface);border-top:1px solid var(--border)}
+.meth-inner{max-width:1380px;margin:0 auto}
+.meth-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.4rem;margin-top:2.5rem}
+@media(max-width:900px){.meth-grid{grid-template-columns:1fr}}
+.mc{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem}
+.mc-ico{font-size:1.4rem;margin-bottom:.9rem}
+.mc h4{font-size:.88rem;font-weight:600;margin-bottom:.7rem}
+.mc ul{list-style:none}
+.mc li{font-size:.8rem;color:var(--muted);padding:.22rem 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.5rem}
+.mc li:last-child{border-bottom:none}
+.mc li::before{content:'→';color:var(--amber);font-size:.68rem}
+
+/* FOOTER */
+footer{max-width:1380px;margin:0 auto;padding:3rem 2.5rem;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:2rem;border-top:1px solid var(--border)}
+footer h5{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.15em;text-transform:uppercase;color:var(--amber);margin-bottom:.8rem}
+footer li{list-style:none;font-size:.76rem;color:var(--muted);margin-bottom:.3rem}
+footer .brand{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--muted);text-align:right}
+footer .brand strong{color:var(--amber)}
+
+/* REVEAL */
+.reveal{opacity:0;transform:translateY(20px);transition:opacity .7s ease,transform .7s ease}
+.reveal.show{opacity:1;transform:none}
+
+@media(max-width:900px){
+  .scrolly{grid-template-columns:1fr}
+  .s-sticky{display:none}
+  .step{min-height:auto;opacity:1}
+  .hero h1{font-size:3rem}
+  .nav-links a:not(:last-child){display:none}
+}
+</style>
+</head>
+<body>
+<div id="prog"></div>
+<div id="tt"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">DataJustiça · 2026</div>
+  <div class="nav-links">
+    <a href="#t1">Racismo Estrutural</a>
+    <a href="#t2">Violência vs Mulher</a>
+    <a href="#mapa">Mapa</a>
+    <a href="#chat">IA</a>
+    <span class="nav-chip"><span class="nav-chip-dot"></span>Claude AI</span>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-content">
+    <div class="hero-eyebrow">Projeto de Ciência de Dados · 2026</div>
+    <h1>
+      <span class="l1">Evidências para</span>
+      <span class="l2">justiça social</span>
+    </h1>
+    <p class="hero-desc">Scrollytelling narrativo, modelagem preditiva, visualização geoespacial interativa e inteligência artificial conversacional aplicados ao racismo estrutural e à violência contra a mulher no Brasil.</p>
+    <div class="hero-kpis">
+      <div class="hkpi"><span class="n" id="h1">0</span><span class="l">Temas analisados</span></div>
+      <div class="hkpi"><span class="n" id="h2">0</span><span class="l">Modelos de ML</span></div>
+      <div class="hkpi"><span class="n" id="h3">0</span><span class="l">Anos de dados</span></div>
+      <div class="hkpi"><span class="n" id="h4">0</span><span class="l">Estados mapeados</span></div>
+    </div>
+  </div>
+  <div class="scroll-cue">scroll para explorar</div>
+</section>
+
+<!-- ═══════════ TEMA 1 ═══════════ -->
+<div id="t1">
+  <div class="chapter-wrap reveal">
+    <div class="ch-tag a">01 · Racismo Estrutural</div>
+    <h2 class="ch-h2">Como a ciência de dados pode<br><span class="ca">combater o racismo</span></h2>
+  </div>
+  <div class="scrolly">
+    <div class="s-steps" id="st1">
+      <div class="step on" data-s="t1" data-i="0">
+        <div class="s-num a">01 — Desigualdade de Renda</div>
+        <h3>Em 2023, negros ganhavam 49% menos que brancos</h3>
+        <p>A série histórica 2012–2023 mostra que o gap salarial <strong>não se fechou</strong>. Com a mesma escolaridade e experiência, a regressão aponta <strong>β = −0,28 (p &lt; 0,001)</strong> — raça explica diretamente 28% da diferença, independente do capital humano acumulado.</p>
+        <div class="stat-pill"><span class="pill-big a">R$2.050</span><span class="pill-lbl">renda negros vs R$4.000 brancos · 2023</span></div>
+      </div>
+      <div class="step" data-s="t1" data-i="1">
+        <div class="s-num a">02 — Segregação Ocupacional</div>
+        <h3>Na cúpula: 18% negros.<br>Na base precária: 78%.</h3>
+        <p><strong>K-Means (k=5)</strong> sobre PNAD 2012–2023 revela 5 clusters ocupacionais com segregação racial extrema e crescente. Quanto mais precário o trabalho, maior a concentração de negros. Silhouette Score = 0,61 valida a qualidade da separação.</p>
+        <div class="stat-pill"><span class="pill-big a">0.61</span><span class="pill-lbl">Silhouette Score · K-Means validado</span></div>
+      </div>
+      <div class="step" data-s="t1" data-i="2">
+        <div class="s-num a">03 — Saúde & Justiça</div>
+        <h3>Mortalidade materna 2× maior e encarceramento 2,4× mais alto</h3>
+        <p>O <strong>PCA</strong> revela que PC1 explica 67% da variância e carrega igualmente em renda (0,89), saúde (0,82), encarceramento (−0,77) e escolaridade (0,84) — confirmando que o racismo é <strong>sistêmico e multidimensional</strong>, não setorial.</p>
+        <div class="stat-pill"><span class="pill-big a">67%</span><span class="pill-lbl">variância explicada pelo PC1 — desigualdade sistêmica</span></div>
+      </div>
+      <div class="step" data-s="t1" data-i="3">
+        <div class="s-num a">04 — Eficácia de Políticas</div>
+        <h3>Cotas: +14 p.p. no acesso.<br>ROI social: R$6,40 por real.</h3>
+        <p>Diferença em Diferenças (DiD) confirma causalidade das cotas (p &lt; 0,001). <strong>Random Forest</strong> com F1=0,79 identifica municípios prioritários. Transferência de renda apresenta o maior retorno social estimado: <strong>R$6,40 por real investido</strong>.</p>
+        <div class="stat-pill"><span class="pill-big a">+14</span><span class="pill-lbl">p.p. · impacto causal das cotas (DiD confirmado)</span></div>
+      </div>
+    </div>
+    <div class="s-sticky">
+      <div class="chart-stage">
+        <div class="stage-bar a"></div>
+        <div class="chart-layer on" id="t1l0">
+          <div class="cl-label">Renda Média Mensal por Raça · 2012–2023</div>
+          <div class="cl-canvas"><canvas id="c1a"></canvas></div>
+        </div>
+        <div class="chart-layer" id="t1l1">
+          <div class="cl-label">K-Means Clusters · % Negros por Grupo Ocupacional</div>
+          <div class="cl-canvas"><canvas id="c1b"></canvas></div>
+        </div>
+        <div class="chart-layer" id="t1l2">
+          <div class="cl-label">Disparidades Institucionais · Brancos vs Negros</div>
+          <div class="cl-canvas"><canvas id="c1c"></canvas></div>
+        </div>
+        <div class="chart-layer" id="t1l3">
+          <div class="cl-label">Impacto das Cotas · % Negros no Ensino Superior</div>
+          <div class="cl-canvas"><canvas id="c1d"></canvas></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ TEMA 2 ═══════════ -->
+<div id="t2" style="margin-top:40px">
+  <div class="chapter-wrap reveal">
+    <div class="ch-tag r">02 · Violência Contra a Mulher</div>
+    <h2 class="ch-h2">Uma mostra do histórico com<br><span class="cr">visualização de dados</span></h2>
+  </div>
+  <div class="scrolly">
+    <div class="s-steps" id="st2">
+      <div class="step on" data-s="t2" data-i="0">
+        <div class="s-num r">01 — Série Histórica</div>
+        <h3>1.437 feminicídios em 2022 — um a cada 6 horas</h3>
+        <p>Modelo <strong>ARIMA(2,1,2)</strong> revela tendência de crescimento de 3,2% ao ano e sazonalidade com picos em dezembro–janeiro. A projeção aponta <strong>1.580 casos para 2025</strong> sem intervenção adicional — tornando urgente a expansão de políticas preventivas.</p>
+        <div class="stat-pill"><span class="pill-big r">1.580</span><span class="pill-lbl">projeção ARIMA para 2025 sem novas políticas</span></div>
+      </div>
+      <div class="step" data-s="t2" data-i="1">
+        <div class="s-num r">02 — Perfil das Vítimas</div>
+        <h3>75% cometidos pelo parceiro — padrão estável há 10 anos</h3>
+        <p><strong>Mulheres negras entre 25–34 anos</strong> formam o grupo mais vulnerável. A violência psicológica (29%) é a segunda mais prevalente mas a mais subnotificada — estimativa de apenas 38% de registro. O gap entre ocorrência real e B.O. é de 2,6×.</p>
+        <div class="stat-pill"><span class="pill-big r">2,6×</span><span class="pill-lbl">ocorrências reais vs B.O.s registrados (estimativa)</span></div>
+      </div>
+      <div class="step" data-s="t2" data-i="2">
+        <div class="s-num r">03 — Efeito Pandemia</div>
+        <h3>Violência +30%.<br>Denúncias −17%.</h3>
+        <p>A pandemia criou um paradoxo severo: <strong>isolamento aumentou exposição</strong> à violência mas bloqueou acesso a denúncias. O gap entre violência estimada e registros no Ligue 180 atingiu o <strong>maior nível histórico no Q2-2020</strong>.</p>
+        <div class="stat-pill"><span class="pill-big r">+30%</span><span class="pill-lbl">violência no pico pandemia vs −17% de denúncias</span></div>
+      </div>
+      <div class="step" data-s="t2" data-i="3">
+        <div class="s-num r">04 — Intervenções Eficazes</div>
+        <h3>Tornozeleira eletrônica:<br>−44% de reincidência</h3>
+        <p>Meta-análise de 8 intervenções mostra que <strong>monitoramento do agressor</strong> supera campanhas de mídia em 3,7×. IDH local (r=−0,71) e presença de DEAM (r=−0,68) são os maiores preditores de baixo IVM. <strong>AUC-ROC do modelo preditivo: 0,84</strong>.</p>
+        <div class="stat-pill"><span class="pill-big r">0.84</span><span class="pill-lbl">AUC-ROC · Random Forest preditivo de risco municipal</span></div>
+      </div>
+    </div>
+    <div class="s-sticky">
+      <div class="chart-stage">
+        <div class="stage-bar r"></div>
+        <div class="chart-layer on" id="t2l0">
+          <div class="cl-label">Feminicídios Registrados + Projeção ARIMA · 2015–2025</div>
+          <div class="cl-canvas"><canvas id="c2a"></canvas></div>
+        </div>
+        <div class="chart-layer" id="t2l1">
+          <div class="cl-label">Tipo de Violência · Distribuição % (2022)</div>
+          <div class="cl-canvas"><canvas id="c2b"></canvas></div>
+        </div>
+        <div class="chart-layer" id="t2l2">
+          <div class="cl-label">Violência Real vs Denúncias · Índice (Q1-2019=100)</div>
+          <div class="cl-canvas"><canvas id="c2c"></canvas></div>
+        </div>
+        <div class="chart-layer" id="t2l3">
+          <div class="cl-label">Redução por Tipo de Intervenção · Meta-análise (%)</div>
+          <div class="cl-canvas"><canvas id="c2d"></canvas></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ MAPA ═══════════ -->
+<section id="mapa">
+  <div class="map-wrap reveal">
+    <div class="ch-tag a">03 · Mapa Geoespacial Interativo</div>
+    <h2 class="ch-h2" style="margin-bottom:0">Distribuição territorial<br>das desigualdades</h2>
+    <div class="map-controls">
+      <button class="mctrl on-r" id="btn-ivm" onclick="setMetric('ivm')">Violência contra a Mulher (IVM)</button>
+      <button class="mctrl" id="btn-idr" onclick="setMetric('idr')">Desigualdade Racial (IDR)</button>
+    </div>
+    <div class="map-grid">
+      <div id="map-box"></div>
+      <div class="map-panel">
+        <div>
+          <div class="map-legend-title" id="leg-title">Índice de Violência contra a Mulher</div>
+          <div class="leg-bar" id="leg-bar"></div>
+          <div class="leg-ends"><span>Baixo risco</span><span>Alto risco</span></div>
+        </div>
+        <div class="state-ranks" id="state-list"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ CHAT ═══════════ -->
+<section id="chat">
+  <div class="chat-wrap">
+    <div class="chat-grid reveal">
+      <div class="chat-intro">
+        <div class="ci-tag">04 · Inteligência Artificial Conversacional</div>
+        <h2>Pergunte aos dados<br>em linguagem natural</h2>
+        <p>Claude tem contexto completo sobre todos os dados, modelos e resultados deste projeto. Explore comparações entre estados, entenda as metodologias ou investigue padrões específicos.</p>
+        <div class="suggs">
+          <button class="sugg" onclick="ask('Qual o estado com maior IVM e quais fatores socioeconômicos explicam isso segundo os dados?')"><span class="sugg-arrow">↗</span>Qual estado tem maior índice de violência e por quê?</button>
+          <button class="sugg" onclick="ask('Como o K-Means revela segregação racial no mercado de trabalho? Explique os 5 clusters e o que o Silhouette Score de 0,61 significa.')"><span class="sugg-arrow">↗</span>Como o K-Means identifica segregação racial?</button>
+          <button class="sugg" onclick="ask('Qual a projeção ARIMA para feminicídios em 2025 e 2026? Quais as premissas e limitações do modelo?')"><span class="sugg-arrow">↗</span>Qual a projeção ARIMA de feminicídios para 2025?</button>
+          <button class="sugg" onclick="ask('Compare a eficácia das intervenções contra violência doméstica em termos de redução de reincidência e custo-benefício.')"><span class="sugg-arrow">↗</span>Compare a eficácia das intervenções de proteção</button>
+        </div>
+      </div>
+      <div class="chatbox">
+        <div class="chat-hdr">
+          <div class="chat-av">DJ</div>
+          <div>
+            <div class="chat-hdr-nm">DataJustiça IA</div>
+            <div class="chat-hdr-st">● Claude · Especialista em dados do projeto</div>
+          </div>
+        </div>
+        <div class="chat-msgs" id="msgs">
+          <div class="cm ai">
+            <div class="cm-ic">DJ</div>
+            <div class="cm-bub">Olá! Tenho acesso completo aos dados, modelos e análises do DataJustiça 2026. Posso responder sobre racismo estrutural, violência contra a mulher, os modelos de ML utilizados ou comparações entre estados. O que você gostaria de explorar?</div>
+          </div>
+        </div>
+        <div class="chat-input-row">
+          <input class="chat-in" id="chat-in" placeholder="Faça uma pergunta sobre os dados..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg()}">
+          <button class="send-btn" id="sbtn" onclick="sendMsg()">↑</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- METHODOLOGY -->
+<section class="meth-wrap">
+  <div class="meth-inner reveal">
+    <div class="ch-tag a">Metodologia · Técnicas aplicadas</div>
+    <div class="meth-grid">
+      <div class="mc"><div class="mc-ico">🔍</div><h4>Análise Exploratória (EDA)</h4><ul>
+        <li>Estatísticas descritivas por grupo racial</li>
+        <li>Detecção de outliers (IQR, Z-score)</li>
+        <li>Heatmap de correlação (Pearson r)</li>
+        <li>Decomposição de séries temporais</li>
+        <li>Análise de subnotificação estimada</li>
+      </ul></div>
+      <div class="mc"><div class="mc-ico">🤖</div><h4>Modelagem Preditiva</h4><ul>
+        <li>Regressão múltipla (β = −0,28, p&lt;0,001)</li>
+        <li>ARIMA(2,1,2) — projeção temporal</li>
+        <li>Random Forest (F1=0,79, AUC-ROC=0,84)</li>
+        <li>Diferença em Diferenças (DiD causal)</li>
+        <li>Kaplan-Meier (análise de sobrevivência)</li>
+      </ul></div>
+      <div class="mc"><div class="mc-ico">📐</div><h4>Clustering & Redução</h4><ul>
+        <li>K-Means (k=5, Silhouette=0,61)</li>
+        <li>PCA — PC1 explica 67% da variância</li>
+        <li>Chow Test (quebra estrutural)</li>
+        <li>Causal Forest (efeitos heterogêneos)</li>
+        <li>UMAP para visualização dimensional</li>
+      </ul></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="sources">
+    <h5>Fontes de Dados</h5>
+    <ul>
+      <li>IBGE · PNAD Contínua 2012–2023</li>
+      <li>FBSP · Atlas da Violência 2023 / IPEA</li>
+      <li>DataSUS / SINAN · Agravos de Notificação</li>
+      <li>INEP · Censo da Educação Superior 2012–2023</li>
+      <li>MDH · Central Ligue 180 · Relatório 2022</li>
+    </ul>
+  </div>
+  <div class="brand"><strong>DataJustiça 2026</strong><br>Ciência de Dados & Justiça Social</div>
+</footer>
+
+<script>
+// ── SCROLL PROGRESS ──
+window.addEventListener('scroll',()=>{
+  const d=document.documentElement;
+  document.getElementById('prog').style.width=(d.scrollTop/(d.scrollHeight-d.clientHeight)*100)+'%';
+});
+
+// ── REVEAL ON SCROLL ──
+const ro=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('show')});
+},{threshold:.15});
+document.querySelectorAll('.reveal').forEach(el=>ro.observe(el));
+
+// ── HERO COUNTERS ──
+function count(el,t,s='',d=1100){
+  const t0=performance.now();
+  const fn=n=>{
+    const p=Math.min((n-t0)/d,1),e=1-Math.pow(1-p,3);
+    el.textContent=Math.round(t*e)+s;
+    if(p<1)requestAnimationFrame(fn);
+  };
+  requestAnimationFrame(fn);
+}
+window.addEventListener('load',()=>{
+  setTimeout(()=>{
+    count(document.getElementById('h1'),2);
+    count(document.getElementById('h2'),8);
+    count(document.getElementById('h3'),12);
+    count(document.getElementById('h4'),27);
+  },350);
+});
+
+// ── CHART DEFAULTS ──
+Chart.defaults.font.family="'DM Sans',sans-serif";
+Chart.defaults.color='#64748b';
+Chart.defaults.plugins.legend.labels.boxWidth=10;
+Chart.defaults.plugins.legend.labels.padding=14;
+Chart.defaults.plugins.legend.labels.color='#64748b';
+const ANOS=['2012','2013','2014','2015','2016','2017','2018','2019','2020','2021','2022','2023'];
+function mk(id,cfg){const el=document.getElementById(id);if(!el)return null;return new Chart(el,cfg);}
+
+// ── TEMA 1 CHARTS ──
+mk('c1a',{type:'line',data:{labels:ANOS,datasets:[
+  {label:'Brancos',data:[2800,2950,3100,3050,2900,3100,3300,3500,3400,3600,3800,4000],borderColor:'#60a5fa',backgroundColor:'rgba(96,165,250,.07)',tension:.4,fill:true,pointRadius:3,pointBackgroundColor:'#60a5fa'},
+  {label:'Negros',data:[1600,1650,1710,1680,1600,1700,1780,1850,1700,1780,1860,1950],borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,.07)',tension:.4,fill:true,pointRadius:3,pointBackgroundColor:'#f59e0b'}
+]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{x:{grid:{color:'rgba(255,255,255,.04)'}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{callback:v=>'R$'+v.toLocaleString('pt-BR')}}}}});
+
+mk('c1b',{type:'bar',data:{labels:['C1 — Alta Gestão','C2 — Técnico Espec.','C3 — Serviços','C4 — Trabalho Informal','C5 — Trab. Doméstico'],datasets:[{label:'% Negros no cluster',data:[18,34,55,72,78],backgroundColor:ctx=>{const v=ctx.dataset.data[ctx.dataIndex];return v>60?'rgba(239,68,68,.85)':v>40?'rgba(245,158,11,.85)':'rgba(96,165,250,.8)'},borderRadius:5}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{max:100,grid:{color:'rgba(255,255,255,.04)'},ticks:{callback:v=>v+'%'}},y:{grid:{display:false},ticks:{font:{size:11}}}}}});
+
+mk('c1c',{type:'bar',data:{labels:['Encarc./100mil','Mort. Materna/100mil','Acesso Sup. (%)','Renda Média (÷100)'],datasets:[
+  {label:'Brancos',data:[145,42,57,40],backgroundColor:'rgba(96,165,250,.75)',borderRadius:4},
+  {label:'Negros',data:[408,90,35,19.5],backgroundColor:'rgba(245,158,11,.8)',borderRadius:4}
+]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{x:{grid:{color:'rgba(255,255,255,.04)'}},y:{grid:{color:'rgba(255,255,255,.04)'}}}}});
+
+mk('c1d',{type:'line',data:{labels:ANOS,datasets:[
+  {label:'Sem cotas (projeção)',data:[12,12.5,13,13.2,13.5,14,14.2,14.5,14.6,14.8,15,15.2],borderColor:'#334155',borderDash:[6,4],tension:.3,pointRadius:2,fill:false},
+  {label:'Com cotas (real)',data:[12,13,16,19,23,26,28,31,32,34,36,38],borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,.09)',tension:.4,fill:true,pointRadius:3}
+]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{x:{grid:{color:'rgba(255,255,255,.04)'}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{callback:v=>v+'%'},title:{display:true,text:'% no ensino superior',color:'#475569',font:{size:11}}}}}});
+
+// ── TEMA 2 CHARTS ──
+const A5=['2015','2016','2017','2018','2019','2020','2021','2022','2023','2024*','2025*'];
+mk('c2a',{type:'line',data:{labels:A5,datasets:[
+  {label:'Registrados',data:[940,1133,1206,1173,1314,1350,1319,1437,1470,null,null],borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,.1)',fill:true,tension:.3,pointRadius:5,pointBackgroundColor:'#ef4444'},
+  {label:'Projeção ARIMA',data:[null,null,null,null,null,null,null,null,1470,1525,1580],borderColor:'#f87171',borderDash:[6,3],tension:.3,pointRadius:4,pointStyle:'triangle',fill:false}
+]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{x:{grid:{color:'rgba(255,255,255,.04)'}},y:{grid:{color:'rgba(255,255,255,.04)'},suggestedMin:800}}}});
+
+mk('c2b',{type:'doughnut',data:{labels:['Física 38%','Psicológica 29%','Moral 14%','Sexual 10%','Patrimonial 7%','Outras 2%'],datasets:[{data:[38,29,14,10,7,2],backgroundColor:['#ef4444','#f87171','#fb923c','#fbbf24','#60a5fa','#475569'],borderWidth:2,borderColor:'#111827'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'58%',plugins:{legend:{position:'bottom',labels:{font:{size:11}}}}}});
+
+mk('c2c',{type:'line',data:{labels:['Q1-19','Q2-19','Q3-19','Q4-19','Q1-20','Q2-20','Q3-20','Q4-20','Q1-21','Q2-21','Q3-21','Q4-21'],datasets:[
+  {label:'Violência real (índice)',data:[100,102,103,105,115,130,128,132,138,142,140,145],borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,.08)',fill:true,tension:.3},
+  {label:'Denúncias / B.O.s (índice)',data:[100,101,102,103,108,85,90,96,100,105,108,112],borderColor:'#60a5fa',borderDash:[5,4],tension:.3,fill:false}
+]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{x:{grid:{color:'rgba(255,255,255,.04)'}},y:{grid:{color:'rgba(255,255,255,.04)'}}}}});
+
+mk('c2d',{type:'bar',data:{labels:['Tornozeleira','Patrulha MP','Prog. Mulher Seg.','DEAM','Casa Abrigo','Educação','Campanhas'],datasets:[{label:'Redução (%)',data:[44,41,35,32,28,18,12],backgroundColor:ctx=>{const v=ctx.dataset.data[ctx.dataIndex];return v>35?'rgba(239,68,68,.9)':v>20?'rgba(251,146,60,.85)':'rgba(96,165,250,.7)'},borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{max:55,grid:{color:'rgba(255,255,255,.04)'},ticks:{callback:v=>v+'%'}},y:{grid:{display:false},ticks:{font:{size:11}}}}}});
+
+// ── SCROLLYTELLING OBSERVER ──
+function setLayer(sec,idx){
+  for(let i=0;i<4;i++){
+    const l=document.getElementById(`${sec}l${i}`);
+    if(l)l.classList.toggle('on',i===idx);
+  }
+  document.querySelectorAll(`.step[data-s="${sec}"]`).forEach((s,i)=>s.classList.toggle('on',i===idx));
+}
+const sobs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      setLayer(e.target.dataset.s,parseInt(e.target.dataset.i));
+    }
+  });
+},{threshold:.55,rootMargin:'-4% 0px -4% 0px'});
+document.querySelectorAll('.step[data-s]').forEach(s=>sobs.observe(s));
+
+// ── STATE DATA ──
+const SD={
+  AC:{n:'Acre',ivm:82,idr:78,fem:4.8,deam:3},AL:{n:'Alagoas',ivm:75,idr:80,fem:4.1,deam:8},
+  AM:{n:'Amazonas',ivm:71,idr:73,fem:3.8,deam:11},AP:{n:'Amapá',ivm:68,idr:70,fem:3.5,deam:5},
+  BA:{n:'Bahia',ivm:62,idr:68,fem:3.2,deam:28},CE:{n:'Ceará',ivm:65,idr:65,fem:3.4,deam:20},
+  DF:{n:'Dist. Federal',ivm:45,idr:42,fem:1.9,deam:12},ES:{n:'Espírito Santo',ivm:52,idr:50,fem:2.5,deam:14},
+  GO:{n:'Goiás',ivm:55,idr:52,fem:2.8,deam:16},MA:{n:'Maranhão',ivm:78,idr:82,fem:4.2,deam:10},
+  MG:{n:'Minas Gerais',ivm:55,idr:55,fem:2.6,deam:42},MS:{n:'Mato Grosso Sul',ivm:74,idr:60,fem:4.2,deam:7},
+  MT:{n:'Mato Grosso',ivm:70,idr:62,fem:3.7,deam:9},PA:{n:'Pará',ivm:70,idr:75,fem:3.9,deam:12},
+  PB:{n:'Paraíba',ivm:60,idr:62,fem:3.0,deam:14},PE:{n:'Pernambuco',ivm:62,idr:64,fem:3.2,deam:22},
+  PI:{n:'Piauí',ivm:64,idr:71,fem:3.3,deam:11},PR:{n:'Paraná',ivm:38,idr:38,fem:1.8,deam:22},
+  RJ:{n:'Rio de Janeiro',ivm:48,idr:48,fem:2.1,deam:30},RN:{n:'Rio Gr. Norte',ivm:58,idr:60,fem:2.9,deam:14},
+  RO:{n:'Rondônia',ivm:78,idr:65,fem:4.5,deam:4},RR:{n:'Roraima',ivm:72,idr:69,fem:3.8,deam:3},
+  RS:{n:'Rio Gr. Sul',ivm:28,idr:28,fem:1.1,deam:18},SC:{n:'Santa Catarina',ivm:32,idr:30,fem:1.2,deam:22},
+  SE:{n:'Sergipe',ivm:63,idr:70,fem:3.3,deam:9},SP:{n:'São Paulo',ivm:45,idr:42,fem:1.8,deam:67},
+  TO:{n:'Tocantins',ivm:65,idr:60,fem:3.5,deam:8}
+};
+const IBGE={'11':'RO','12':'AC','13':'AM','14':'RR','15':'PA','16':'AP','17':'TO','21':'MA','22':'PI','23':'CE','24':'RN','25':'PB','26':'PE','27':'AL','28':'SE','29':'BA','31':'MG','32':'ES','33':'RJ','35':'SP','41':'PR','42':'SC','43':'RS','50':'MS','51':'MT','52':'GO','53':'DF'};
+
+let metric='ivm', mapSvg=null;
+
+function colorScale(m){
+  return m==='ivm'
+    ? d3.scaleSequential(d3.interpolateReds).domain([22,88])
+    : d3.scaleSequential(d3.interpolateOranges).domain([22,88]);
+}
+function setMetric(m){
+  metric=m;
+  document.getElementById('btn-ivm').className='mctrl'+(m==='ivm'?' on-r':'');
+  document.getElementById('btn-idr').className='mctrl'+(m==='idr'?' on-a':'');
+  document.getElementById('leg-title').textContent=m==='ivm'?'Índice de Violência contra a Mulher (IVM)':'Índice de Desigualdade Racial (IDR)';
+  document.getElementById('leg-bar').className='leg-bar'+(m==='idr'?' a':'');
+  if(mapSvg) mapSvg.selectAll('path').transition().duration(500).attr('fill',d=>{
+    const uf=IBGE[d.properties.codarea];
+    return SD[uf]?colorScale(m)(SD[uf][m]):'#1e293b';
+  });
+  buildList(m);
+}
+function buildList(m){
+  const el=document.getElementById('state-list');
+  const c=colorScale(m);
+  const sorted=Object.entries(SD).sort((a,b)=>b[1][m]-a[1][m]);
+  el.innerHTML=sorted.map(([uf,d])=>`<div class="srank"><span class="uf">${uf}</span><span class="sn">${d.n}</span><span class="sv" style="color:${c(d[m])}">${d[m]}</span></div>`).join('');
+}
+
+// Load D3 Map
+const box=document.getElementById('map-box');
+const W=box.offsetWidth||600,H=Math.round(W*.75);
+const svg=d3.select('#map-box').append('svg').attr('viewBox',`0 0 ${W} ${H}`).attr('preserveAspectRatio','xMidYMid meet');
+const proj=d3.geoMercator().center([-54,-15]).scale(W*.97).translate([W/2,H/2]);
+const pathFn=d3.geoPath().projection(proj);
+const ttEl=document.getElementById('tt');
+
+d3.json('https://servicodados.ibge.gov.br/api/v3/malhas/paises/BR?formato=application%2Fvnd.geo%2Bjson&resolucao=5&intrarregiao=UF')
+  .then(geo=>{
+    mapSvg=svg;
+    svg.selectAll('path').data(geo.features).join('path')
+      .attr('d',pathFn)
+      .attr('fill',d=>{const uf=IBGE[d.properties.codarea];return SD[uf]?colorScale('ivm')(SD[uf].ivm):'#1e293b'})
+      .attr('stroke','rgba(255,255,255,.1)').attr('stroke-width',.6)
+      .style('cursor','pointer')
+      .on('mousemove',(event,d)=>{
+        const uf=IBGE[d.properties.codarea],sd=SD[uf];if(!sd)return;
+        ttEl.style.opacity='1';ttEl.style.left=(event.clientX+14)+'px';ttEl.style.top=(event.clientY-8)+'px';
+        ttEl.innerHTML=`<div class="ttn">${sd.n} (${uf})</div>
+          <div class="ttr"><span>IVM</span><span class="ttv">${sd.ivm}</span></div>
+          <div class="ttr"><span>IDR</span><span class="ttv">${sd.idr}</span></div>
+          <div class="ttr"><span>Feminicídios / 100mil</span><span class="ttv">${sd.fem}</span></div>
+          <div class="ttr"><span>DEAMs ativas</span><span class="ttv">${sd.deam}</span></div>`;
+        d3.select(this).attr('stroke','rgba(255,255,255,.7)').attr('stroke-width',1.8);
+      })
+      .on('mouseleave',function(){
+        ttEl.style.opacity='0';
+        d3.select(this).attr('stroke','rgba(255,255,255,.1)').attr('stroke-width',.6);
+      });
+    buildList('ivm');
+  })
+  .catch(()=>{
+    svg.append('text').attr('x',W/2).attr('y',H/2-8).attr('text-anchor','middle').attr('fill','#475569').attr('font-size',13).text('Conecte à internet para carregar o mapa do Brasil.');
+    svg.append('text').attr('x',W/2).attr('y',H/2+20).attr('text-anchor','middle').attr('fill','#334155').attr('font-size',11).text('Os dados por estado continuam disponíveis na lateral →');
+    buildList('ivm');
+  });
+
+// ── AI CHAT ──
+const SYS=`Você é o DataJustiça IA, assistente especializado nos dados do projeto DataJustiça 2026. Responda SEMPRE em português brasileiro. Seja analítico, preciso e cite dados específicos.
+
+DADOS — TEMA 1 (RACISMO ESTRUTURAL):
+• Renda negros R$1.950/mês vs brancos R$4.000 (2023). Gap de 49%.
+• Regressão múltipla: β=−0,28 (p<0,001) — raça explica 28% do gap salarial controlando escolaridade e experiência.
+• K-Means k=5: C1=18% negros (alta gestão, R$14.200), C2=34% (técnico, R$4.800), C3=55% (serviços, R$2.100), C4=72% (informal, R$980), C5=78% (doméstico, R$1.320). Silhouette=0,61.
+• PCA: PC1=67% da variância. Cargas: renda(0,89), saúde(0,82), encarceramento(−0,77), escolaridade(0,84).
+• Encarceramento: negros=408/100mil, brancos=145/100mil (razão 2,4×).
+• Mortalidade materna: negras=90, brancas=42 (por 100mil nascidos vivos). Negras 2,14× mais.
+• Cotas universitárias: +14 p.p. acesso (DiD causal, p<0,001).
+• ROI social: transferência renda=R$6,4/real, saúde racial=R$5,1, cotas=R$4,2.
+• 45,3% da população negra abaixo da linha de pobreza. 58% das vítimas de homicídio são negros.
+
+DADOS — TEMA 2 (VIOLÊNCIA CONTRA A MULHER):
+• Feminicídios 2022: 1.437. Projeção ARIMA(2,1,2) para 2025: 1.580 (+3,2% a.a.).
+• 75% por parceiro íntimo ou familiar. 66.123 B.O.s/mês em média.
+• Tipos: Física(38%), Psicológica(29%), Moral(14%), Sexual(10%), Patrimonial(7%).
+• Gap subnotificação: 2,6× ocorrências reais vs B.O.s registrados.
+• Pandemia: violência estimada +30%, denúncias −17% no pico (Q2-2020).
+• Intervenções: Tornozeleira(−44%), Patrulha MP(−41%), Prog. Mulher Segura(−35%), DEAM(−32%), Casa Abrigo(−28%), Educação(−18%), Campanhas(−12%).
+• Modelo preditivo: AUC-ROC=0,84, F1-Score=0,79.
+• Correlações com IVM: IDH baixo(r=0,71), Sem DEAM próxima(r=0,68), Isolamento rural(r=0,64).
+• Lei Maria da Penha: −9,6% mortes no 1º ano, acumulado −34% até 2015.
+
+ESTADOS (IVM / IDR):
+• Crítico: AC(82/78), MA(78/82), RO(78/65), AL(75/80), MS(74/60)
+• Alto: MT(70/62), PA(70/75), AM(71/73), CE(65/65), TO(65/60)
+• Médio: MG(55/55), GO(55/52), ES(52/50), RJ(48/48), SP(45/42)
+• Baixo: SC(32/30), PR(38/38), RS(28/28)
+
+Responda de forma estruturada. Explique metodologias quando pedido. Seja específico com números.`;
+
+let hist=[];
+async function sendMsg(){
+  const inp=document.getElementById('chat-in');
+  const btn=document.getElementById('sbtn');
+  const txt=inp.value.trim();
+  if(!txt)return;
+  addMsg('usr',txt);
+  inp.value='';btn.disabled=true;
+  hist.push({role:'user',content:txt});
+  const tid='t'+Date.now();
+  const tel=document.createElement('div');tel.className='cm ai';tel.id=tid;
+  tel.innerHTML='<div class="cm-ic">DJ</div><div class="cm-bub"><div class="typing-dots"><span></span><span></span><span></span></div></div>';
+  document.getElementById('msgs').appendChild(tel);scrollChat();
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:SYS,messages:hist})
+    });
+    const data=await res.json();
+    const reply=data.content?.map(b=>b.text||'').join('')||'Erro ao obter resposta.';
+    document.getElementById(tid)?.remove();
+    hist.push({role:'assistant',content:reply});
+    addMsg('ai',reply);
+  }catch(e){
+    document.getElementById(tid)?.remove();
+    addMsg('ai','Erro de conexão com a API. Verifique sua conexão e tente novamente.');
+  }
+  btn.disabled=false;
+}
+function addMsg(role,text){
+  const msgs=document.getElementById('msgs');
+  const el=document.createElement('div');el.className=`cm ${role}`;
+  const icon=role==='ai'?'DJ':'↑';
+  const safe=text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
+  el.innerHTML=`<div class="cm-ic">${icon}</div><div class="cm-bub">${safe}</div>`;
+  msgs.appendChild(el);scrollChat();
+}
+function scrollChat(){const m=document.getElementById('msgs');m.scrollTop=m.scrollHeight;}
+function ask(q){document.getElementById('chat-in').value=q;sendMsg();}
+</script>
+</body>
+</html>
