@@ -393,10 +393,15 @@ footer .brand strong{color:var(--amber)}
       <div class="chatbox">
         <div class="chat-hdr">
           <div class="chat-av">DJ</div>
-          <div>
+          <div style="flex:1">
             <div class="chat-hdr-nm">DataJustiça IA</div>
-            <div class="chat-hdr-st">● Claude · Especialista em dados do projeto</div>
+            <div class="chat-hdr-st" id="api-status">● Insira sua API key para ativar</div>
           </div>
+        </div>
+        <div id="api-row" style="border-bottom:1px solid var(--border);padding:.75rem 1.2rem;display:flex;gap:.6rem;align-items:center;background:rgba(245,158,11,.06)">
+          <span style="font-size:.68rem;color:var(--muted);font-family:'JetBrains Mono',monospace;white-space:nowrap;flex-shrink:0">API KEY</span>
+          <input id="api-key-in" type="password" placeholder="sk-ant-api03-..." style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:.42rem .8rem;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:.74rem;outline:none;min-width:0" oninput="checkKey()">
+          <a href="https://console.anthropic.com/keys" target="_blank" style="font-size:.68rem;color:var(--amber);text-decoration:none;white-space:nowrap;font-family:'JetBrains Mono',monospace;flex-shrink:0">Obter chave →</a>
         </div>
         <div class="chat-msgs" id="msgs">
           <div class="cm ai">
@@ -571,9 +576,10 @@ const IBGE={'11':'RO','12':'AC','13':'AM','14':'RR','15':'PA','16':'AP','17':'TO
 let metric='ivm', mapSvg=null;
 
 function colorScale(m){
+  // Custom scales: dark bg → vivid accent, giving maximum contrast on dark theme
   return m==='ivm'
-    ? d3.scaleSequential(d3.interpolateReds).domain([22,88])
-    : d3.scaleSequential(d3.interpolateOranges).domain([22,88]);
+    ? d3.scaleSequential(t => d3.interpolateRgb('#1a0a0a','#ef4444')(t)).domain([22,88])
+    : d3.scaleSequential(t => d3.interpolateRgb('#1a1200','#f59e0b')(t)).domain([22,88]);
 }
 function setMetric(m){
   metric=m;
@@ -608,7 +614,7 @@ d3.json('https://servicodados.ibge.gov.br/api/v3/malhas/paises/BR?formato=applic
     svg.selectAll('path').data(geo.features).join('path')
       .attr('d',pathFn)
       .attr('fill',d=>{const uf=IBGE[d.properties.codarea];return SD[uf]?colorScale('ivm')(SD[uf].ivm):'#1e293b'})
-      .attr('stroke','rgba(255,255,255,.1)').attr('stroke-width',.6)
+      .attr('stroke','rgba(255,255,255,.25)').attr('stroke-width',1)
       .style('cursor','pointer')
       .on('mousemove',(event,d)=>{
         const uf=IBGE[d.properties.codarea],sd=SD[uf];if(!sd)return;
@@ -633,6 +639,23 @@ d3.json('https://servicodados.ibge.gov.br/api/v3/malhas/paises/BR?formato=applic
   });
 
 // ── AI CHAT ──
+function checkKey(){
+  const k=document.getElementById('api-key-in').value.trim();
+  const st=document.getElementById('api-status');
+  const row=document.getElementById('api-row');
+  if(k.startsWith('sk-ant')){
+    st.textContent='● Claude ativo · Especialista em dados do projeto';
+    st.style.color='var(--green)';
+    row.style.background='rgba(74,222,128,.06)';
+    row.style.borderBottomColor='rgba(74,222,128,.15)';
+  } else {
+    st.textContent='● Insira sua API key para ativar';
+    st.style.color='';
+    row.style.background='rgba(245,158,11,.06)';
+    row.style.borderBottomColor='var(--border)';
+  }
+}
+
 const SYS=`Você é o DataJustiça IA, assistente especializado nos dados do projeto DataJustiça 2026. Responda SEMPRE em português brasileiro. Seja analítico, preciso e cite dados específicos.
 
 DADOS — TEMA 1 (RACISMO ESTRUTURAL):
@@ -671,6 +694,11 @@ async function sendMsg(){
   const btn=document.getElementById('sbtn');
   const txt=inp.value.trim();
   if(!txt)return;
+  const apiKey=document.getElementById('api-key-in').value.trim();
+  if(!apiKey.startsWith('sk-ant')){
+    addMsg('ai','⚠️ Insira sua API key da Anthropic no campo acima para usar o chat. Obtenha uma gratuitamente em **console.anthropic.com/keys**');
+    return;
+  }
   addMsg('usr',txt);
   inp.value='';btn.disabled=true;
   hist.push({role:'user',content:txt});
@@ -680,17 +708,28 @@ async function sendMsg(){
   document.getElementById('msgs').appendChild(tel);scrollChat();
   try{
     const res=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',headers:{'Content-Type':'application/json'},
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':apiKey,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
       body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:SYS,messages:hist})
     });
     const data=await res.json();
-    const reply=data.content?.map(b=>b.text||'').join('')||'Erro ao obter resposta.';
-    document.getElementById(tid)?.remove();
-    hist.push({role:'assistant',content:reply});
-    addMsg('ai',reply);
+    if(data.error){
+      document.getElementById(tid)?.remove();
+      addMsg('ai','❌ Erro da API: '+data.error.message);
+    } else {
+      const reply=data.content?.map(b=>b.text||'').join('')||'Sem resposta.';
+      document.getElementById(tid)?.remove();
+      hist.push({role:'assistant',content:reply});
+      addMsg('ai',reply);
+    }
   }catch(e){
     document.getElementById(tid)?.remove();
-    addMsg('ai','Erro de conexão com a API. Verifique sua conexão e tente novamente.');
+    addMsg('ai','❌ Erro de rede. Verifique sua conexão e tente novamente.');
   }
   btn.disabled=false;
 }
