@@ -1,139 +1,109 @@
-# DataJustiça 2026 — Ciência de Dados & Justiça Social
+# DataJustiça · plataforma de pesquisa exploratória
 
-> Scrollytelling narrativo + visualização geoespacial + IA conversacional aplicados ao estudo do racismo estrutural e da violência contra a mulher no Brasil.
+Projeto Python para organizar e explorar séries abertas de segurança pública, com filtros por crime/indicador, município e período, comparação entre localidades e cenários de sensibilidade. A primeira base é real e delimitada: dados agregados do Instituto de Segurança Pública do Estado do Rio de Janeiro (ISP-RJ), capturados em **30/09/2026**.
 
-![DataJustiça 2026](https://img.shields.io/badge/versão-2026-f59e0b?style=flat-square)
-![HTML](https://img.shields.io/badge/HTML-single--file-60a5fa?style=flat-square)
-![D3.js](https://img.shields.io/badge/D3.js-7.8.5-ef4444?style=flat-square)
-![Chart.js](https://img.shields.io/badge/Chart.js-4.4.1-4ade80?style=flat-square)
-![Claude API](https://img.shields.io/badge/Claude-API-f59e0b?style=flat-square)
-![GitHub Pages](https://img.shields.io/badge/GitHub_Pages-ready-14b8a6?style=flat-square)
+> **Cobertura:** municípios do estado do Rio de Janeiro, em séries mensais. Não representa o Brasil. O ISP publica contagens municipais até 08/2026, taxas municipais até 12/2024 e feminicídio/tentativa por município e CISP até 07/2026. Semana não está disponível nessa base; o sistema não interpola mês em semana.
 
----
+## O que inclui
 
-## 🔍 Sobre o Projeto
+- **Streamlit + Plotly:** filtros de série, indicador criminal, município/área, período e agregação mensal, trimestral ou anual.
+- **DuckDB + Parquet:** consultas analíticas locais em formato colunar, sem exigir servidor de banco de dados.
+- **FastAPI:** endpoints locais para observações, indicadores, áreas e metadados/proveniência.
+- **ETL:** atualização dos três CSVs oficiais, validação de cabeçalhos, SHA-256, registro de data da coleta e geração dos Parquets.
+- **Cenários de sensibilidade:** variações fornecidas pela pessoa usuária sobre a média recente. Não são previsões nem efeitos causais.
+- **Dados incluídos:** snapshot oficial em `data/raw/`; a primeira execução funciona sem uma chamada inicial à internet.
 
-Este projeto aplica técnicas modernas de ciência de dados para analisar duas das questões sociais mais urgentes do Brasil:
+Fontes, períodos, níveis geográficos e limitações estão em [`DATA_SOURCES.md`](DATA_SOURCES.md). Ocorrências são registros policiais e não equivalem a toda a incidência criminal. Outros estados serão conectores separados, com documentação de compatibilidade.
 
-- **Tema 1 — Racismo Estrutural:** Como o racismo se manifesta em renda, educação, saúde e justiça — e como dados podem orientar políticas eficazes.
-- **Tema 2 — Violência contra a Mulher:** Padrões históricos, impacto da pandemia, perfil das vítimas e eficácia de intervenções.
+## Requisitos e instalação
 
----
+Python 3.12 ou 3.13 é recomendado. O projeto declara suporte a Python 3.12 ou superior; o empacotamento tem como alvo conservador 3.12.
 
-## ✨ Funcionalidades
-
-| Feature | Tecnologia | Descrição |
-|---|---|---|
-| **Scrollytelling** | CSS + IntersectionObserver | Narrativa guiada — gráficos mudam conforme o scroll |
-| **Mapa Geoespacial** | D3.js + API IBGE | 27 estados com IVM e IDR interativos, tooltip detalhado |
-| **IA Conversacional** | Claude API (Anthropic) | Perguntas em linguagem natural sobre os dados do projeto |
-| **Visualizações** | Chart.js 4.4 | 8 gráficos — linha, barra, doughnut, radar, scatter |
-| **Barra de Progresso** | CSS + JS | Indicador de leitura no topo da página |
-| **Design Dark Editorial** | CSS puro | Tipografia Syne + DM Sans + JetBrains Mono |
-
----
-
-## 📊 Modelos e Técnicas Utilizadas
-
-```
-Análise Exploratória (EDA)
-├── Estatísticas descritivas por grupo racial
-├── Heatmap de correlação de Pearson
-└── Decomposição de séries temporais
-
-Modelagem Preditiva
-├── Regressão Linear Múltipla (β = −0,28, p < 0,001)
-├── ARIMA(2,1,2) — projeção de feminicídios
-├── Random Forest (AUC-ROC = 0,84 | F1 = 0,79)
-└── Diferença em Diferenças — impacto causal das cotas
-
-Clustering & Redução Dimensional
-├── K-Means (k=5, Silhouette Score = 0,61)
-├── PCA — PC1 explica 67% da variância
-└── Chow Test — quebra estrutural pós-2015
-```
-
----
-
-## 📁 Estrutura do Repositório
-
-```
-datajustica-2026/
-├── index.html          # Versão 2026 — Scrollytelling + Mapa + IA
-├── dashboard-v1.html   # Versão 2024 — Dashboard clássico com abas
-└── README.md
-```
-
----
-
-## 🚀 Como Usar
-
-### Opção 1 — Abrir localmente
 ```bash
-git clone https://github.com/SEU_USUARIO/datajustica-2026.git
-cd datajustica-2026
-# Abra index.html no navegador
-open index.html   # macOS
-xdg-open index.html  # Linux
+python -m venv .venv
+# Windows PowerShell
+.venv\Scripts\Activate.ps1
+# macOS/Linux: source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -e ".[dev,research]"
 ```
 
-### Opção 2 — GitHub Pages (recomendado)
-1. No repositório, vá em **Settings → Pages**
-2. Source: **Deploy from a branch**
-3. Branch: `main` → pasta: `/ (root)`
-4. Aguarde ~1 min e acesse `https://SEU_USUARIO.github.io/datajustica-2026`
+## Rodar a aplicação
 
-> **Nota sobre a IA:** Para usar o chat conversacional, a página deve ser servida por um servidor web (GitHub Pages funciona). Ao abrir como arquivo local (`file://`), o navegador pode bloquear a chamada à API.
+```bash
+streamlit run src/datajustica/dashboard/app.py
+```
 
----
+A interface abre em `http://localhost:8501`. **Atualizar arquivos do ISP-RJ** baixa a versão mais recente e reconstrói a base. Também é possível usar a CLI:
 
-## 🗺️ Mapa — Dados por Estado
+```bash
+datajustica refresh
+datajustica build   # reconstrói só a partir de data/raw/
+datajustica status  # mostra cobertura e hashes processados
+```
 
-O mapa carrega o GeoJSON oficial do IBGE via API em tempo real. Caso não haja conexão, o ranking lateral permanece funcional.
+## API local
 
-**Índices utilizados:**
+```bash
+uvicorn datajustica.api:app --host 127.0.0.1 --port 8000
+```
 
-- **IVM** (Índice de Violência contra a Mulher): composto por feminicídios (40%) + violência doméstica (30%) + estupros (20%) + subnotificação estimada (10%)
-- **IDR** (Índice de Desigualdade Racial): composto por renda, escolaridade, encarceramento e acesso à saúde
+- `GET /health`
+- `GET /v1/datasets`
+- `GET /v1/indicators?dataset=municipality_counts`
+- `GET /v1/areas?dataset=municipality_counts`
+- `GET /v1/observations?dataset=municipality_counts&indicator=estupro&start=2024-01-01&end=2026-08-01`
+- `GET /docs` para OpenAPI
 
----
+A API é local e sem autenticação. Não a exponha diretamente à internet.
 
-## 📚 Fontes dos Dados
+## Docker
 
-| Fonte | Dados utilizados |
-|---|---|
-| **IBGE / PNAD Contínua** | Renda, escolaridade, mercado de trabalho (2012–2023) |
-| **FBSP / Atlas da Violência 2023** | Feminicídios, violência doméstica, IVM por estado |
-| **DataSUS / SINAN** | Mortalidade materna, agravos de notificação |
-| **INEP** | Censo da Educação Superior (2012–2023) |
-| **MDH / Ligue 180** | Chamadas à central, sazonalidade (2018–2022) |
-| **IPEA** | Indicadores de pobreza e desigualdade racial |
+```bash
+docker compose up --build
+```
 
----
+A aplicação fica em `http://localhost:8501`; o volume `./data` preserva as atualizações no host.
 
-## 📖 Referências Bibliográficas
+## Verificação e pesquisa
 
-- Cerqueira et al. (2019). *"O Jogo dos Sete Erros: Avaliação de Impacto da Lei Maria da Penha."* IPEA.
-- FBSP. *Atlas da Violência 2023.* Fórum Brasileiro de Segurança Pública / IPEA.
-- IBGE. *Pesquisa Nacional por Amostra de Domicílios Contínua (PNAD) 2012–2023.*
-- MDH. *Relatório Anual Central Ligue 180, 2022.*
+```bash
+pytest
+ruff check .
+```
 
----
+Os extras `research` incluem JupyterLab, statsmodels e scikit-learn para análises posteriores sobre as tabelas rastreáveis. Nenhum modelo preditivo ou desenho causal é declarado como validado neste projeto.
 
-## 🛠️ Tecnologias
+## Arquitetura
 
-- **D3.js 7.8.5** — visualização geoespacial e mapa do Brasil
-- **Chart.js 4.4.1** — gráficos interativos
-- **Anthropic Claude API** — IA conversacional especializada
-- **Google Fonts** — Syne, DM Sans, JetBrains Mono
-- **CSS puro** — animações, scrollytelling, dark theme
+```text
+ISP-RJ (CSV oficial)
+        │
+        ▼
+sources/isp_rj.py ── valida cabeçalhos + calcula SHA-256
+        │
+        ▼
+data/raw/ (snapshot rastreável)
+        │
+        ▼
+transformação pandas ──> data/processed/*.parquet
+                                      │
+                    ┌─────────────────┴─────────────────┐
+                    ▼                                   ▼
+          dashboard Streamlit                    API FastAPI
+                    └──────── consultas DuckDB ────────┘
+```
 
----
+Cada observação guarda fonte, período, nível geográfico, indicador e unidade. Dados brutos versionados servem como snapshot reproduzível; o ETL recria os Parquets derivados.
 
-## 📄 Licença
+## Expansões recomendadas
 
-MIT License — livre para uso educacional e acadêmico.
+1. Conector Sinesp/MJSP para cobertura nacional e por UF/município, depois de validar o dicionário, o formato e a atualização de cada recurso.
+2. Conector SIM/DataSUS para mortalidade segundo CID-10, sem equiparar automaticamente homicídio de mulher a feminicídio jurídico.
+3. Conectores de outros institutos estaduais como fontes isoladas; não concatenar categorias sem harmonização auditável.
+4. Denominadores anuais do IBGE para taxas calculadas pelo projeto, com versão e ano de referência registrados.
+5. Frequência semanal somente se uma fonte oficial compatível a publicar.
 
----
+## Licença e atribuição
 
-*Projeto de Ciência de Dados · 2026 · DataJustiça*
+Atribuição dos dados: Instituto de Segurança Pública do Estado do Rio de Janeiro (ISP-RJ), ISPdados Abertos. Links, arquivos e datas constam em `DATA_SOURCES.md`. Confirme as condições de reutilização indicadas pelo publicador antes de redistribuir. O repositório recebido não continha licença de software; este trabalho não presume um novo termo.

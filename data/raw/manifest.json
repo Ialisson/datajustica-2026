@@ -1,0 +1,30 @@
+{
+  "retrieved_at": "2026-09-30T00:00:00-03:00",
+  "publisher": "ISP-RJ",
+  "files": {
+    "isp_criminalidade_municipio_mensal.csv": {
+      "url": "https://www.ispdados.rj.gov.br/Arquivos/BaseMunicipioMensal.csv",
+      "sha256": "a9458e23fb8a34c75080759d496bf56e8784309394686416da0bdd5a34230466",
+      "bytes": 2366044,
+      "rows": 13984,
+      "period_start": "2014-01",
+      "period_end": "2026-08"
+    },
+    "isp_criminalidade_municipio_mensal_taxas.csv": {
+      "url": "https://www.ispdados.rj.gov.br/Arquivos/BaseMunicipioTaxaMes.csv",
+      "sha256": "4aa75a0378f30a441d80e5b848d68a4af146909fd93bfb11c4b244f7b9cfccb4",
+      "bytes": 4246466,
+      "rows": 12144,
+      "period_start": "2014-01",
+      "period_end": "2024-12"
+    },
+    "isp_feminicidio_cisp_mensal.csv": {
+      "url": "https://www.ispdados.rj.gov.br/Arquivos/BaseFeminicidioEvolucaoMensalCisp.csv",
+      "sha256": "33b2f6178adf71eec3cf5270fdeeaee76a0f436b5f0384fea6ceb4159223eb75",
+      "bytes": 716041,
+      "rows": 17165,
+      "period_start": "2016-11",
+      "period_end": "2026-07"
+    }
+  }
+}
