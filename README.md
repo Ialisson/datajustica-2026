@@ -42,6 +42,16 @@ datajustica build   # reconstrói só a partir de data/raw/
 datajustica status  # mostra cobertura e hashes processados
 ```
 
+## Publicar online
+
+A interface pode ser hospedada no [Streamlit Community Cloud](https://share.streamlit.io/), ligado a este repositório do GitHub. O repositório inclui `requirements.txt` para instalar o pacote e suas dependências, além do ponto de entrada `streamlit_app.py`.
+
+1. Entre no Streamlit Community Cloud com a conta GitHub que tem acesso administrativo ao repositório.
+2. Selecione **Create app** e escolha `Ialisson/datajustica-2026`, branch `main` e arquivo `streamlit_app.py`.
+3. Em **Advanced settings**, selecione Python 3.12 e publique.
+
+O snapshot inicial fica versionado em `data/raw/`; os Parquets são criados automaticamente na primeira consulta. Depois da publicação, alterações enviadas à branch `main` atualizam o app. A aplicação é uma interface Streamlit; a API FastAPI permanece local e não deve ser exposta diretamente à internet.
+
 ## API local
 
 ```bash
